@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: nutribot
+
+  datasource:
+    url: jdbc:h2:mem:nutribot
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+  # Modelo de IA: qualquer API compatível com a da OpenAI, configurada por variáveis de ambiente.
+  # Nunca coloque a chave aqui: o repositório é público.
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:not-set}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+      chat:
+        completions-path: ${OPENAI_COMPLETIONS_PATH:/v1/chat/completions}
+        options:
+          model: ${OPENAI_MODEL:gpt-4o-mini}
+      embedding:
+        embeddings-path: ${OPENAI_EMBEDDINGS_PATH:/v1/embeddings}
+        options:
+          model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+
+server:
+  port: 8080

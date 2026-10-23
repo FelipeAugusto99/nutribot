@@ -1,0 +1,87 @@
+### Tabela de alimentos
+GET http://localhost:8080/foods?name=frango
+
+### Um alimento
+GET http://localhost:8080/foods/1
+
+### Refeições de hoje
+GET http://localhost:8080/meals
+
+### Refeições de uma data
+GET http://localhost:8080/meals?date=2026-10-26
+
+### Registrar refeição (sem date entra hoje)
+POST http://localhost:8080/meals
+Content-Type: application/json
+
+{
+  "mealType": "SNACK",
+  "foodId": 33,
+  "grams": 120
+}
+
+### Registrar refeição inválida (400)
+POST http://localhost:8080/meals
+Content-Type: application/json
+
+{
+  "mealType": "SNACK",
+  "foodId": 33,
+  "grams": -5
+}
+
+### Remover refeição
+DELETE http://localhost:8080/meals/1
+
+### Resumo do dia
+GET http://localhost:8080/summary
+
+### Perfil
+GET http://localhost:8080/profile
+
+### Atualizar perfil
+PUT http://localhost:8080/profile
+Content-Type: application/json
+
+{
+  "name": "Marina Souza",
+  "goal": "MAINTAIN",
+  "dailyCalories": 2000
+}
+
+### ---------------- Rotas da equipe ----------------
+
+### Chat
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "teste-1",
+  "message": "Oi! Meu nome é Rafael. Quantos copos de água devo tomar por dia?"
+}
+
+### Chat — memória (mesmo conversationId)
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "teste-1",
+  "message": "Qual é o meu nome?"
+}
+
+### Chat — tool calling
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "teste-1",
+  "message": "Comi uma banana prata de 120 g no lanche. Registra pra mim e me diz quantas calorias ainda tenho hoje."
+}
+
+### Analisar refeição (structured output)
+POST http://localhost:8080/meals/analyze
+Content-Type: application/json
+
+{
+  "description": "Almocei um prato com arroz, feijão, um bife e salada de alface e tomate"
+}
