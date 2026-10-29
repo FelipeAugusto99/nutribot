@@ -10,9 +10,8 @@ O enunciado completo e os critérios de avaliação estão no deck da atividade.
 
 | Nome | RM |
 |---|---|
-|  |  |
-|  |  |
-|  |  |
+| Felipe Augusto Lopes Ferreira | RM563982 |
+| Kaique Mascarenhas dos Santos | RM565802 |
 
 ## Como rodar
 
