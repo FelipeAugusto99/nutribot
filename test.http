@@ -51,16 +51,25 @@ Content-Type: application/json
 
 ### ---------------- Rotas da equipe ----------------
 
-### Chat
+### Chat — persona (deve recusar: não é nutrição)
 POST http://localhost:8080/chat
 Content-Type: application/json
 
 {
   "conversationId": "teste-1",
-  "message": "Oi! Meu nome é Rafael. Quantos copos de água devo tomar por dia?"
+  "message": "Me ajuda a resolver um exercício de Java?"
 }
 
-### Chat — memória (mesmo conversationId)
+### Memória — 1/3
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "teste-1",
+  "message": "Meu nome é Rafael"
+}
+
+### Memória — 2/3 (mesmo conversationId: lembra o nome)
 POST http://localhost:8080/chat
 Content-Type: application/json
 
@@ -69,19 +78,81 @@ Content-Type: application/json
   "message": "Qual é o meu nome?"
 }
 
-### Chat — tool calling
+### Memória — 3/3 (outro conversationId: não sabe o nome)
 POST http://localhost:8080/chat
 Content-Type: application/json
 
 {
-  "conversationId": "teste-1",
-  "message": "Comi uma banana prata de 120 g no lanche. Registra pra mim e me diz quantas calorias ainda tenho hoje."
+  "conversationId": "teste-2",
+  "message": "Qual é o meu nome?"
 }
 
-### Analisar refeição (structured output)
+### Tool — buscar alimento
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "tools-1",
+  "message": "Quantas calorias tem 100 g de tapioca?"
+}
+
+### Tool — registrar refeição (depois confira em GET /meals)
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "tools-1",
+  "message": "Comi 2 ovos no café"
+}
+
+### Tool — resumo do dia
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "tools-1",
+  "message": "Quantas calorias ainda posso comer hoje?"
+}
+
+### RAG — água
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "rag-1",
+  "message": "Quantos copos de água por dia a clínica recomenda?"
+}
+
+### RAG — horário
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "rag-1",
+  "message": "Qual o horário de atendimento?"
+}
+
+### Chat inválido (400)
+POST http://localhost:8080/chat
+Content-Type: application/json
+
+{
+  "conversationId": "",
+  "message": "oi"
+}
+
+### Analisar refeição (structured output, não grava no diário)
 POST http://localhost:8080/meals/analyze
 Content-Type: application/json
 
 {
-  "description": "Almocei um prato com arroz, feijão, um bife e salada de alface e tomate"
+  "description": "arroz, feijão e um bife"
+}
+
+### Analisar refeição inválida (400)
+POST http://localhost:8080/meals/analyze
+Content-Type: application/json
+
+{
+  "description": ""
 }

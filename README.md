@@ -26,38 +26,40 @@ A API sobe em `http://localhost:8080`. O console do H2 não está habilitado; os
 
 O arquivo `test.http` tem exemplos de todas as rotas.
 
+## Modelo usado
+
+**Google Gemini `gemini-2.5-flash`** (chat) e **`gemini-embedding-001`** (embeddings do RAG), pelo endpoint compatível com a OpenAI.
+
 ## Configurando o modelo
 
 O projeto usa o starter da OpenAI do Spring AI, que funciona com **qualquer API compatível com a da OpenAI**. A configuração é feita por variáveis de ambiente — **nunca coloque a chave no código ou no `application.yml`**, o repositório é público.
 
 | Variável | Padrão | Para que serve |
 |---|---|---|
-| `OPENAI_API_KEY` | — | Chave da API |
-| `OPENAI_BASE_URL` | `https://api.openai.com` | Endereço da API (sem `/v1`) |
-| `OPENAI_MODEL` | `gpt-4o-mini` | Modelo de chat |
-| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | Modelo de embeddings (RAG) |
-| `OPENAI_COMPLETIONS_PATH` | `/v1/chat/completions` | Caminho do chat |
-| `OPENAI_EMBEDDINGS_PATH` | `/v1/embeddings` | Caminho dos embeddings |
+| `OPENAI_API_KEY` | — | Chave da API (obrigatória) |
+| `OPENAI_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` | Endereço-base da API |
+| `OPENAI_MODEL` | `gemini-2.5-flash` | Modelo de chat |
+| `OPENAI_EMBEDDING_MODEL` | `gemini-embedding-001` | Modelo de embeddings (RAG) |
+
+> No Spring AI 2.0 o starter usa o SDK oficial da OpenAI, que acrescenta `/chat/completions` e `/embeddings` ao `OPENAI_BASE_URL` sozinho; por isso as antigas variáveis `OPENAI_COMPLETIONS_PATH` e `OPENAI_EMBEDDINGS_PATH` não são mais necessárias.
 
 Exemplos:
 
 ```bash
+# Google Gemini (padrão do projeto): só a chave do AI Studio
+export OPENAI_API_KEY=sua-chave-do-ai-studio
+
 # OpenAI
 export OPENAI_API_KEY=sk-...
+export OPENAI_BASE_URL=https://api.openai.com/v1
+export OPENAI_MODEL=gpt-4o-mini
+export OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
 # Ollama local (ollama pull llama3.2 && ollama pull nomic-embed-text)
 export OPENAI_API_KEY=ollama
-export OPENAI_BASE_URL=http://localhost:11434
+export OPENAI_BASE_URL=http://localhost:11434/v1
 export OPENAI_MODEL=llama3.2
 export OPENAI_EMBEDDING_MODEL=nomic-embed-text
-
-# Google Gemini (endpoint compatível com OpenAI)
-export OPENAI_API_KEY=sua-chave-do-ai-studio
-export OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-export OPENAI_COMPLETIONS_PATH=/chat/completions
-export OPENAI_EMBEDDINGS_PATH=/embeddings
-export OPENAI_MODEL=gemini-2.5-flash
-export OPENAI_EMBEDDING_MODEL=gemini-embedding-001
 ```
 
 No IntelliJ, as variáveis podem ser definidas em *Run → Edit Configurations → Environment variables*.
@@ -90,11 +92,23 @@ Os documentos da clínica estão em `src/main/resources/docs/`:
 
 Eles devem ser carregados no vector store na inicialização. A escolha do vector store é da equipe.
 
-## O que a equipe vai fazer
+## Funcionalidades de IA implementadas
 
 | Método | Rota | Corpo | Resposta |
 |---|---|---|---|
-| POST | `/chat` | `{conversationId, message}` | `{answer}` |
-| POST | `/meals/analyze` | `{description}` | `{items: [{food, grams, calories}], totalCalories, protein, carbs, fat}` |
+| POST | `/chat` | `{"conversationId":"app-123","message":"Quantas calorias tem 100 g de tapioca?"}` | `200 {"answer":"..."}` · `400 {"error":"..."}` |
+| POST | `/meals/analyze` | `{"description":"arroz, feijão e um bife"}` | `200 {"items":[{"food","grams","calories"}],"totalCalories","protein","carbs","fat"}` · `400` |
+
+Onde está cada requisito:
+
+| Requisito | Implementação |
+|---|---|
+| Chat e system prompt | `config/AiConfig.java` — `ChatClient` montado uma vez com o builder (`defaultSystem`) com a persona NutriBot da Clínica Equilíbrio: responde em português, recusa o que não é nutrição, não diagnostica nem prescreve dieta clínica e lembra que não substitui o nutricionista. `controller/ChatController.java` expõe o `POST /chat`. |
+| Memória | `ChatMemory` (`MessageWindowChatMemory`, últimas 20 mensagens) registrada no `ChatClient` com o `MessageChatMemoryAdvisor`; o `conversationId` da requisição vai em `ChatMemory.CONVERSATION_ID`, então cada conversa tem o seu histórico. |
+| Tool calling | `ai/NutriBotTools.java` — `buscarAlimento` (`FoodService.search`), `resumoDoDia` (`MealService.summary`, o mesmo do `/summary`) e `registrarRefeicao` (`MealService.log`, grava no diário), com `@Tool` e registradas com `defaultTools`. |
+| RAG | `config/RagConfig.java` — na subida, lê `resources/docs/*.md`, divide por seção e grava num `SimpleVectorStore` (em memória) com os embeddings do modelo; o `QuestionAnswerAdvisor` liga o vector store ao `/chat`. |
+| Structured output | `controller/MealAnalysisController.java` — `.entity(MealAnalysisResponse.class)` preenche os records `MealAnalysisResponse`/`Item` (números como `double`), sem parse manual. Usa um `ChatClient` separado, sem tools nem memória, então nada é gravado no diário. |
+
+O arquivo `test.http` tem exemplos de todas as rotas, incluindo os testes do enunciado (memória, tools, RAG e structured output).
 
 O app de testes está em https://github.com/joaocarloslima/nutribot-app.
